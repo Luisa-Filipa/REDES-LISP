@@ -1,0 +1,102 @@
+R1:
+
+en
+conf t
+
+hostname R1_xTR
+
+int lo0
+ipv6 address 2010:DB8:A0::1/32
+exit
+
+int g0/0
+ipv6 address 2001:DB8:14::1/64
+no shut
+
+ipv6 route 2001:DB8::/64 G0/0
+
+router lisp
+database-mapping 2010:DB8:A0::/32 2001:DB8:14::1 priority 1 weight 100
+ipv6 itr
+ipv6 itr map-resolver 2001:DB8:34::3
+ipv6 etr
+ipv6 etr map-server 2001:DB8:34::3 key tut_siteA
+
+end
+wr
+
+-----------------------------------------------------------------
+R2:
+
+en
+conf t
+
+hostname R2_xTR
+
+int g0/0
+ipv6 address 2001:DB8:10:24::2/32
+no shut
+
+int lo0
+ipv6 address 2010:DB8:A1::2/32
+exit
+
+ipv6 route 2001:DB8::/64 G0/0
+
+router lisp
+database-mapping 2010:DB8:A1::/32 2001:DB8:24::2 priority 1 weight 100
+ipv6 itr
+ipv6 itr map-resolver 2001:DB8:34::3
+ipv6 etr
+ipv6 etr map-server 2001:DB8:34::3 key tut_siteB
+
+end
+wr
+-----------------------------------------------------------------
+R3:
+
+en
+conf t
+
+hostname R3_MS_MR
+
+int g0/0
+ipv6 address 2001:DB8:34::3/64
+no shut
+
+ipv6 route 2001:DB8::/32 G0/0
+
+lisp site siteA
+eid-prefix 2010:DB8:A0::/32
+authentication-key tut_siteA
+
+lisp site siteB
+eid-prefix 2010:DB8:A1::/32
+authentication-key tut_siteB
+
+ipv6 lisp map-server
+ipv6 lisp map-resolver
+
+end
+wr
+-----------------------------------------------------------------
+R4:
+
+en
+conf t
+
+hostname R4_Underlay
+
+int g0/0
+ipv6 address 2001:DB8:14::4/64
+no shut
+int g0/1
+ipv6 address 2001:DB8:24::4/64
+no shut
+int g0/2
+ipv6 address 2001:DB8:34::4/64
+no shut
+
+end
+wr
+----------------
