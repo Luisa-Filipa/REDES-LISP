@@ -1,0 +1,195 @@
+R1:
+
+en
+conf t
+
+hostname R1_xTR
+
+int lo0
+ip address 1.1.1.1 255.255.255.255
+exit
+
+int g0/0
+ip address 10.10.14.1 255.255.255.0
+no shut
+interface g0/1
+ip address 192.168.15.1 255.255.255.0
+no shut
+exit
+
+ip route 10.0.0.0 255.0.0.0 10.10.14.4
+
+router ospf 1
+network 192.168.15.0 0.0.0.255 area 0
+default-information originate always
+exit
+
+router lisp
+database-mapping 1.1.1.0/24 10.10.14.1 priority 1 weight 100
+database-mapping 5.5.5.0/24 10.10.14.1 priority 1 weight 100
+database-mapping 55.55.55.55/32 10.10.14.1 priority 1 weight 100
+database-mapping 192.168.15.0/24 10.10.14.1 priority 1 weight 100
+ipv4 itr
+ipv4 itr map-resolver 10.10.34.3
+ipv4 etr
+ipv4 etr map-server 10.10.34.3 key tut_siteA
+
+
+end
+wr
+-----------------------------------------------------------------
+R2:
+
+en
+conf t
+
+hostname R2_xTR
+
+int g0/0
+ip address 10.10.24.2 255.255.255.0
+no shut
+interface g0/1
+ip address 192.168.26.2 255.255.255.0
+no shut
+exit
+
+int lo0
+ip address 2.2.2.2 255.255.255.255
+exit
+
+ip route 10.0.0.0 255.0.0.0 10.10.24.4
+
+router ospf 1
+network 192.168.26.0 0.0.0.255 area 0
+default-information originate always
+exit
+
+router lisp
+database-mapping 2.2.2.0/24 10.10.24.2 priority 1 weight 100
+database-mapping 6.6.6.0/24 10.10.24.2 priority 1 weight 100
+database-mapping 66.66.66.66/32 10.10.24.2 priority 1 weight 100
+database-mapping 192.168.26.0/24 10.10.24.2 priority 1 weight 100
+ipv4 itr
+ipv4 itr map-resolver 10.10.34.3
+ipv4 etr
+ipv4 etr map-server 10.10.34.3 key tut_siteB
+
+end
+wr
+-----------------------------------------------------------------
+R3:
+
+en
+conf t
+
+hostname R3_MS_MR
+
+int g0/0
+ip address 10.10.34.3 255.255.255.0
+no shut
+
+ip route 10.0.0.0 255.0.0.0 10.10.34.4
+
+lisp site siteA
+eid-prefix 1.1.1.0/24
+eid-prefix 5.5.5.0/24
+eid-prefix 55.55.55.55/32
+eid-prefix 192.168.15.0/24
+authentication-key tut_siteA
+exit
+
+lisp site siteB
+eid-prefix 2.2.2.0/24
+eid-prefix 6.6.6.0/24
+eid-prefix 66.66.66.66/32
+eid-prefix 192.168.26.0/24
+authentication-key tut_siteB
+exit
+
+ip lisp map-server
+ip lisp map-resolver
+
+end
+wr
+
+-----------------------------------------------------------------
+R4:
+
+en
+conf t
+
+hostname R4_Underlay
+
+int g0/0
+ip address 10.10.14.4 255.255.255.0
+no shut
+int g0/1
+ip address 10.10.24.4 255.255.255.0
+no shut
+int g0/2
+ip address 10.10.34.4 255.255.255.0
+no shut
+
+end
+wr
+-----------------------------------------------------------------
+R5:
+
+en
+conf t
+
+hostname R5
+
+interface g0/0
+ip address 192.168.15.5 255.255.255.0
+no shut
+exit
+
+int lo0
+ip address 5.5.5.5 255.255.255.255
+exit
+
+int lo1
+ip address 55.55.55.55 255.255.255.255
+exit
+
+router ospf 1
+network 192.168.15.0 0.0.0.255 area 0
+network 5.5.5.5 0.0.0.0 area 0
+network 55.55.55.55 0.0.0.0 area 0
+
+end
+wr
+
+-----------------------------------------------------------------
+R6:
+
+en
+conf t
+
+hostname R6
+
+interface g0/0
+ip address 192.168.26.6 255.255.255.0
+no shut
+exit
+
+int lo0
+ip address 6.6.6.6 255.255.255.255
+exit
+
+int lo1
+ip address 66.66.66.66 255.255.255.255
+exit
+
+router ospf 1
+network 192.168.26.0 0.0.0.255 area 0
+network 6.6.6.6 0.0.0.0 area 0
+network 66.66.66.66 0.0.0.0 area 0
+
+end
+wr
+
+-----------------------------------------------------------------
+
+clear ip lisp map-cache
